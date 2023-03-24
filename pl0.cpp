@@ -1,5 +1,6 @@
 #include<iostream>
 #include<unordered_map>
+#include<vector>
 #include<algorithm>
 #include<typeinfo>
 
@@ -64,7 +65,20 @@ int stringToInt(string str)
     return ans;
 }
 
-string KEYWORD_SET[] = {
+string intToString(int i)
+{
+    string ans = "";
+    while(i)
+    {
+        ans += i % 10 + '0';
+        i /= 10;
+    }
+    reverse(ans.begin(), ans.end());
+    return ans;
+}
+
+string KEYWORD_SET[] = 
+{
     "const",
     "var",
     "procedure",
@@ -89,7 +103,8 @@ string KEYWORD_SET[] = {
 //     int Eof = 4;
 // };
 
-unordered_map<string, int> TokenKindStringToInt{
+unordered_map<string, int> TokenKindStringToInt
+{
     {"Op", 0},
     {"Num", 1},
     {"Name", 2},
@@ -97,7 +112,8 @@ unordered_map<string, int> TokenKindStringToInt{
     {"Eof", 4}
 };
 
-unordered_map<int, string> TokenKindIntToString{
+unordered_map<int, string> TokenKindIntToString
+{
     {0, "Op"},
     {1, "Num"},
     {2, "Name"},
@@ -243,6 +259,236 @@ public:
         }
     }
 };
+
+class Factor;
+class Term;
+class Expression;
+class Assign;
+class Begin;
+class OddCondition;
+class StdCondition;
+class Condition;
+class If;
+class While;
+class Statement;
+class Procedure;
+class Block;
+class Program;
+
+class Factor
+{
+    string valString;
+    int valInt;
+    Expression* valExpr;
+};
+
+class Term
+{
+    Factor* lhs;
+    vector<pair<string, Factor*>> rhs;
+};
+
+class Expression
+{
+    string mod;
+    Term* lhs;
+    vector<pair<string, Factor*>> rhs;
+};
+
+class Const
+{
+    string name;
+    int value;
+};
+
+class Assign
+{
+    string name;
+    Expression* expr;
+};
+
+class Call
+{
+    string name;
+};
+
+class Begin
+{
+    vector<Statement*> body;
+};
+
+class OddCondition
+{
+    Expression* expr;
+};
+
+class StdCondition
+{
+    string op;
+    Expression* lhs;
+    Expression* rhs;
+};
+
+class Condition
+{
+
+};
+
+class If
+{
+    Condition* cond;
+    Statement* then;
+};
+
+class While
+{
+    Condition* cond;
+    Statement* then;
+};
+
+class Statement
+{
+    Assign* stmtA;
+    Begin* stmtB;
+    Call* stmtC;
+    If* stmtI;
+    While* stmtW;
+};
+
+class Procedure
+{
+    string name;
+    Block* body;
+};
+
+class Block
+{
+public:
+    vector<Const*> consts;
+    vector<string> vars;
+    vector<Procedure*> procs;
+    Statement* stmt;
+
+    Block(vector<Const*> consts, vector<string> vars, vector<Procedure*> procs, Statement* stmt)
+    {
+        this -> consts = consts;
+        this -> vars = vars;
+        this -> procs = procs;
+        this -> stmt = stmt;
+    }
+
+    Block(){};
+    Block(const Block& block)
+    {
+        this -> consts = block.consts;
+        this -> vars = block.vars;
+        this -> procs = block.procs;
+        this -> stmt = block.stmt;
+    }
+};
+
+class Program
+{
+public:
+    Block block;
+    Program(Block block)
+    {
+        this -> block = block;
+    }
+};
+
+class Parser
+{
+public:
+    Lexer* lx;
+
+    Parser(Lexer* lx)
+    {
+        this -> lx = lx;
+    }
+
+    bool check(int ty, string valString, int valInt)
+    {
+        int p = this -> lx -> i;
+        Token tk = this -> lx -> next();
+
+        if(tk.ty == ty && tk.valInt == valInt && tk.valString == valString)
+        {
+            return true;
+        }
+
+        this -> lx -> i = p;
+        return false;
+    }
+
+    void expect(int ty, string valString, int valInt)
+    {
+        Token tk = this -> lx -> next();
+        int tty = tk.ty;
+        string tvalString = tk.valString;
+        int tvalInt = tk.valInt;
+
+        if(tty != ty)
+        {
+            throw ty + " expected, got " + tty;
+        }
+
+        if(tty == TokenKindStringToInt["Num"] && valInt != tvalInt)
+        {
+            throw intToString(valInt) + " expected, got " + intToString(tvalInt);
+        }
+
+        if(tty != TokenKindStringToInt["Num"] && valString != tvalString)
+        {
+            throw valString + " expected, got " + tvalString;
+        }
+    }
+
+    Program program();
+    Block block();
+    vector<Const*> _const();
+    vector<string> var();
+    Procedure* procedure();
+    Statement* statement();
+    Condition conditioin();
+    OddCondition odd_condition();
+    StdCondition std_condition();
+    Expression expression();
+    Term term();
+    Factor factor();
+};
+
+Program Parser::program()
+{
+    Block block = this -> block();
+    this -> expect(TokenKindStringToInt["Op"], ".", 0);
+    return Program(block);
+}
+
+Block Parser::block()
+{
+    vector<string> vars;
+    vector<Procedure*> procs;
+    vector<Const*> consts;
+
+    if(this -> check(TokenKindStringToInt["KeyWord"], "const", 0))
+    {
+        consts = this -> _const();
+    }
+
+    if(this -> check(TokenKindStringToInt["KeyWord"], "var", 0))
+    {
+        vars = this -> var();
+    }
+
+    while (this -> check(TokenKindStringToInt["KeyWord"], "procedure", 0))
+    {
+        procs.push_back(this -> procedure());
+    }
+    
+    Statement* stmt = this -> statement();
+    return Block(consts, vars, procs, stmt); 
+}
 
 
 
