@@ -139,17 +139,165 @@ class Lexer:
         else:
             raise SyntaxError('invalid character ' + repr(self.s[self.i]))
 
+class IrOpCode(IntEnum):
+    Add     = 0
+    Sub     = 1
+    Mul     = 2
+    Div     = 3
+    Neg     = 4
+    Eq      = 5
+    Ne      = 6
+    Lt      = 7
+    Lte     = 8
+    Gt      = 9
+    Gte     = 10
+    Odd     = 11
+    LoadVar = 12
+    LoadLit = 13
+    Store   = 14
+    Jump    = 15
+    BrFalse = 16
+    DefVar  = 17
+    DefLit  = 18
+    DefProc = 19
+    Input   = 100
+    Output  = 101
+    Halt    = 255
+
+class Ir(NamedTuple):
+    op : IrOpCode
+    args : str | int | None = None
+    value : int | list['Ir'] | None = None
+
+class EvalContext(NamedTuple):
+    vars   : dict[str, int | None]
+    procs  : dict[str, 'Procedure | list[Ir]']
+    consts : dict[str, int]
+
 class Factor(NamedTuple):
     value: 'str | int | Expression'
+
+    def gen(self, buf: list[Ir]):
+        if isinstance(self.value, int):
+            buf.append(Ir(IrOpCode.LoadLit, self.value))
+        elif isinstance(self.value, str):
+            buf.append(Ir(IrOpCode.LoadVar, self.value))
+        elif isinstance(self.value, Expression):
+            self.value.gen(buf)
+        else:
+            raise RuntimeError('invalid factor value')
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        if isinstance(self.value, int):
+            return self.value
+
+        elif isinstance(self.value, str):
+            if self.value in ctx.vars:
+                key = self.value
+                ret = ctx.vars[key]
+
+                if ret is None:
+                    raise RuntimeError('variable %s referenced before initialize' % key)
+                else:
+                    return ret
+
+            elif self.value in ctx.consts:
+                return ctx.consts[self.value]
+
+            else:
+                raise RuntimeError('undefined symbol: ' + self.value)
+
+        elif isinstance(self.value, Expression):
+            val = self.value.eval(ctx)
+            assert val is not None, 'invalid nested expression'
+            return val
+
+        else:
+            raise RuntimeError('invalid factor value')
 
 class Term(NamedTuple):
     lhs: Factor
     rhs: list[tuple[str, Factor]]
 
+    def gen(self, buf: list[Ir]):
+        self.lhs.gen(buf)
+
+        for op, rhs in self.rhs:
+            rhs.gen(buf)
+
+            if op == '*':
+                buf.append(Ir(IrOpCode.Mul))
+            elif op == '/':
+                buf.append(Ir(IrOpCode.Div))
+            else:
+                raise RuntimeError('invalid expression operator')
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        ret = self.lhs.eval(ctx)
+        assert ret is not None, 'invalid term lhs'
+
+        for op, rhs in self.rhs:
+            val = rhs.eval(ctx)
+            assert val is not None, 'invalid expression rhs'
+
+            if op == '*':
+                ret *= val
+            elif op == '/':
+                if val == 0:
+                    raise RuntimeError('division by zero')
+                else:
+                    ret /= val
+            else:
+                raise RuntimeError('invalid expression operator')
+
+        return ret
+
 class Expression(NamedTuple):
     mod: str
     lhs: Term
     rhs: list[tuple[str, Term]]
+
+    def gen(self, buf: list[Ir]):
+        self.lhs.gen(buf)
+
+        if self.mod == '-':
+            buf.append(Ir(IrOpCode.Neg))
+        elif self.mod not in {'', '+'}:
+            raise RuntimeError('invalid expression sign')
+
+        for op, rhs in self.rhs:
+            rhs.gen(buf)
+
+            if op == '+':
+                buf.append(Ir(IrOpCode.Add))
+            elif op == '-':
+                buf.append(Ir(IrOpCode.Sub))
+            else:
+                raise RuntimeError('invalid expression operator')
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        if self.mod == '-':
+            sign = -1
+        elif self.mod in {'', '+'}:
+            sign = 1
+        else:
+            raise RuntimeError('invalid expression sign')
+
+        ret = self.lhs.eval(ctx) * sign
+        assert ret is not None, 'invalid expression lhs'
+
+        for op, rhs in self.rhs:
+            val = rhs.eval(ctx)
+            assert val is not None, 'invalid expression rhs'
+
+            if op == '+':
+                ret += val
+            elif op == '-':
+                ret -= val
+            else:
+                raise RuntimeError('invalid expression operator')
+
+        return ret
 
 class Const(NamedTuple):
     name  : str
@@ -159,37 +307,195 @@ class Assign(NamedTuple):
     name : str
     expr : Expression
 
+    def gen(self, buf: list[Ir]):
+        self.expr.gen(buf)
+        buf.append(Ir(IrOpCode.Store, self.name))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        if self.name not in ctx.vars:
+            raise RuntimeError('undefined variable: ' + self.name)
+
+        val = self.expr.eval(ctx)
+        assert val is not None, 'invalid assignment expression'
+
+        ctx.vars[self.name] = val
+        return None
+
 class Call(NamedTuple):
     name: str
+
+    def gen(self, buf: list[Ir]):
+        # TODO: implement call generation
+        buf.append(Ir(IrOpCode.Store, self.name))
+        
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        # TODO: implement call evaluation
+        
+        if self.name not in ctx.procs:
+            raise RuntimeError('procedure not exists')
+
+        return ctx.procs[self.name].eval(ctx)
 
 class Begin(NamedTuple):
     body: list['Statement']
 
+    def gen(self, buf: list[Ir]):
+        for stmt in self.body:
+            stmt.gen(buf)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        for stmt in self.body:
+            stmt.eval(ctx)
+
 class OddCondition(NamedTuple):
     expr: Expression
+
+    def gen(self, buf: list[Ir]):
+        self.expr.gen(buf)
+        buf.append(Ir(IrOpCode.Odd))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        val = self.expr.eval(ctx)
+        assert val is not None, 'invalid odd expression'
+        return val & 1
 
 class StdCondition(NamedTuple):
     op  : str
     lhs : Expression
     rhs : Expression
 
+    def gen(self, buf: list[Ir]):
+        self.lhs.gen(buf)
+        self.rhs.gen(buf)
+
+        if self.op == '>':
+            buf.append(Ir(IrOpCode.Gt))
+        elif self.op == '<':
+            buf.append(Ir(IrOpCode.Lt))
+        elif self.op == '>=':
+            buf.append(Ir(IrOpCode.Gte))
+        elif self.op == '<=':
+            buf.append(Ir(IrOpCode.Lte))
+        elif self.op == '=':
+            buf.append(Ir(IrOpCode.Eq))
+        elif self.op == '#':
+            buf.append(Ir(IrOpCode.Ne))
+        else:
+            raise RuntimeError('invalid std condition operator: ' + self.op)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        lhs = self.lhs.eval(ctx)
+        rhs = self.rhs.eval(ctx)
+
+        assert lhs is not None, 'invalid std condition lhs expression'
+        assert rhs is not None, 'invalid std condition rhs expression'
+
+        if self.op == '>':
+            return 1 if lhs > rhs else 0
+        elif self.op == '<':
+            return 1 if lhs < rhs else 0
+        elif self.op == '>=':
+            return 1 if lhs >= rhs else 0
+        elif self.op == '<=':
+            return 1 if lhs <= rhs else 0
+        elif self.op == '=':
+            return 1 if lhs == rhs else 0
+        elif self.op == '#':
+            return 1 if lhs != rhs else 0
+        else:
+            raise RuntimeError('invalid std condition operator: ' + self.op)
+
 class Condition(NamedTuple):
     cond: OddCondition | StdCondition
+
+    def gen(self, buf: list[Ir]):
+        self.cond.gen(buf)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        return self.cond.eval(ctx)
 
 class If(NamedTuple):
     cond: Condition
     then: 'Statement'
 
+    def gen(self, buf: list[Ir]):
+        self.cond.gen(buf)
+        i = len(buf)
+        buf.append(Ir(IrOpCode.BrFalse))
+        self.then.gen(buf)
+        buf[i] = Ir(IrOpCode.BrFalse, len(buf))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        val = self.cond.eval(ctx)
+        assert val is not None, 'invalid if condition expression'
+
+        if val != 0:
+            self.then.eval(ctx)
+
 class While(NamedTuple):
     cond : Condition
     do   : 'Statement'
 
+    def gen(self, buf: list[Ir]):
+        i = len(buf)
+        self.cond.gen(buf)
+        j = len(buf)
+        buf.append(Ir(IrOpCode.BrFalse))
+        self.do.gen(buf)
+        buf.append(Ir(IrOpCode.Jump, i))
+        buf[j] = Ir(IrOpCode.BrFalse, len(buf))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        while True:
+            val = self.cond.eval(ctx)
+            assert val is not None, 'invalid while condition expression'
+
+            if val == 0:
+                break
+            else:
+                self.do.eval(ctx)
+
+class InputOutput(NamedTuple):
+    name     : str
+    is_input : bool
+
+    def gen(self, buf: list[Ir]):
+        if self.is_input:
+            buf.append(Ir(IrOpCode.Input))
+            buf.append(Ir(IrOpCode.Store, self.name))
+        else:
+            buf.append(Ir(IrOpCode.LoadVar, self.name))
+            buf.append(Ir(IrOpCode.Output))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        if not self.is_input:
+            print(Factor(self.name).eval(ctx))
+        elif self.name in ctx.vars:
+            ctx.vars[self.name] = int(input())
+        else:
+            raise RuntimeError('undefined variable: ' + self.name)
+
 class Statement(NamedTuple):
     stmt: Assign | Call | Begin | If | While
+
+    def gen(self, buf: list[Ir]):
+        self.stmt.gen(buf)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        return self.stmt.eval(ctx)
 
 class Procedure(NamedTuple):
     name: str
     body: 'Block'
+
+    def gen(self, buf: list[Ir]):
+        self.body.gen(buf)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        # TODO: implement proc evaluation
+
+        return self.body.eval(ctx)
 
 class Block(NamedTuple):
     consts : list[Const]
@@ -302,7 +608,7 @@ class Parser:
         block = self.block()
         self.expect(TokenKind.Op, ';')
 
-        return Procedure(name, block)
+        return Procedure(name.val, block)
 
     def statement(self) -> Statement:
         if self.check(TokenKind.Keyword, 'call'):
