@@ -326,9 +326,12 @@ class Call(NamedTuple):
 
     def gen(self, buf: list[Ir]):
         # TODO: implement call generation
-        buf.append(Ir(IrOpCode.Store, self.name))
+        for ir in buf:
+            if ir.args == self.name:
+                tmp = ir.value
+                for ir_in in tmp:
+                    buf.append(ir_in)
         
-
     def eval(self, ctx: EvalContext) -> int | None:
         # TODO: implement call evaluation
         
@@ -503,8 +506,48 @@ class Block(NamedTuple):
     procs  : list[Procedure]
     stmt   : Statement
 
+    def gen(self, buf: list[Ir]):
+        for cc in self.consts:
+            buf.append(Ir(IrOpCode.DefLit, cc.name, cc.value))
+
+        for vv in self.vars:
+            buf.append(Ir(IrOpCode.DefVar, vv))
+
+        for pp in self.procs:
+            proc = []
+            pp.gen(proc)
+            buf.append(Ir(IrOpCode.DefProc, pp.name, proc))
+
+        self.stmt.gen(buf)
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        for cc in self.consts:
+            if cc.name in ctx.consts:
+                raise RuntimeError('constant redefinition: ' + cc.name)
+            else:
+                ctx.consts[cc.name] = cc.value
+
+        for vv in self.vars:
+            if vv in ctx.vars or vv in ctx.consts:
+                raise RuntimeError('variable redefinition: ' + vv)
+            else:
+                ctx.vars[vv] = None
+
+        for pp in self.procs:
+            ctx.procs[pp.name] = pp
+
+        self.stmt.eval(ctx)
+        return None
+
 class Program(NamedTuple):
     block: Block
+
+    def gen(self, buf: list[Ir]):
+        self.block.gen(buf)
+        buf.append(Ir(IrOpCode.Halt))
+
+    def eval(self, ctx: EvalContext) -> int | None:
+        return self.block.eval(ctx)
 
 class Parser:
     lx: Lexer
