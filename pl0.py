@@ -19,10 +19,19 @@ end.
 """
 
 TEST_PROGRAM2 = """
-procedure test;
-i := 0;
-j := 1
-.
+var x, squ;
+procedure square;
+begin
+   squ:= x * x
+end;
+begin
+   x := 1;
+   while x <= 10 do
+   begin
+      call square;
+      x := x + 1
+   end
+end.
 """
 
 IDENT_FIRST  = string.ascii_letters + '_'
@@ -497,8 +506,9 @@ class Procedure(NamedTuple):
 
     def eval(self, ctx: EvalContext) -> int | None:
         # TODO: implement proc evaluation
-
-        return self.body.eval(ctx)
+        ctx.procs[self.name] = Procedure(self.name, self.body)
+        
+        
 
 class Block(NamedTuple):
     consts : list[Const]
@@ -659,7 +669,7 @@ class Parser:
             if ident.ty != TokenKind.Name:
                 raise SyntaxError('name expected')
             else:
-                return Statement(Call(ident))
+                return Statement(Call(ident.val))
 
         elif self.check(TokenKind.Keyword, 'begin'):
             body = []
@@ -763,4 +773,10 @@ class Parser:
         return Factor(expr)
 
 ps = Parser(Lexer(TEST_PROGRAM2))
-print(ps.program())
+buf = []
+ast = ps.program()
+ast.eval(EvalContext({}, {}, {}))
+ast.gen(buf)
+
+for i, ir in enumerate(buf):
+    print(i, ir)
