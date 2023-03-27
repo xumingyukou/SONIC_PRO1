@@ -6,20 +6,19 @@
 
 using namespace std;
 
-string TEST_PROGRAM = "var i, s;\n\
-begin\n\
-    i := 0; s := 0;\n\
-    while i < 5 do\n\
-    begin\n\
-        i := i + 1;\n\
-        s := s + i * i\n\
-    end\n\
-end.\n\
-";
+string TEST_PROGRAM = "var i, s;\
+begin\
+    i := 0; s := 0;\
+    while i < 5 do\
+    begin\
+        i := i + 1;\
+        s := s + i * i\
+    end\
+end.";
 
 bool isDIGIT(char ch)
 {
-    if(ch >= '0' && ch <= '9')
+    if (ch >= '0' && ch <= '9')
     {
         return true;
     }
@@ -28,7 +27,7 @@ bool isDIGIT(char ch)
 
 bool isIDENT_FIRST(char ch)
 {
-    if((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_')
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_')
     {
         return true;
     }
@@ -37,7 +36,7 @@ bool isIDENT_FIRST(char ch)
 
 bool isIDENT_REMAIN(char ch)
 {
-    if(isIDENT_FIRST(ch) || (ch >= '0' && ch <= '9'))
+    if (isIDENT_FIRST(ch) || (ch >= '0' && ch <= '9'))
     {
         return true;
     }
@@ -47,7 +46,7 @@ bool isIDENT_REMAIN(char ch)
 bool isOP(char ch)
 {
     string ops = "=#+-*/,.;()";
-    if(find(ops.begin(), ops.end(), ch) != ops.end())
+    if (find(ops.begin(), ops.end(), ch) != ops.end())
     {
         return true;
     }
@@ -58,7 +57,7 @@ int stringToInt(string str)
 {
     int ans = 0;
     int n = str.size();
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         ans = ans * 10 + str[i] - '0';
     }
@@ -68,7 +67,7 @@ int stringToInt(string str)
 string intToString(int i)
 {
     string ans = "";
-    while(i)
+    while (i)
     {
         ans += i % 10 + '0';
         i /= 10;
@@ -77,7 +76,7 @@ string intToString(int i)
     return ans;
 }
 
-string KEYWORD_SET[] = 
+string KEYWORD_SET[] =
 {
     "const",
     "var",
@@ -130,24 +129,24 @@ public:
 
     Token(int ty, int valInt, string valString)
     {
-        this -> ty = ty;
-        this -> valInt = valInt;
-        this -> valString = valString;
+        this->ty = ty;
+        this->valInt = valInt;
+        this->valString = valString;
     }
 };
 
 ostream& operator<<(ostream& cout, const Token token)
+{
+    if (token.ty == 1)
     {
-        if(token.ty == 1)
-        {
-            cout << "[type: " << TokenKindIntToString[token.ty] << " val: " << token.valInt << "]"; 
-        }
-        else
-        {
-            cout << "[type: " << TokenKindIntToString[token.ty] << " val: " << token.valString << "]";
-        }
-        
+        cout << "[type: " << TokenKindIntToString[token.ty] << " val: " << token.valInt << "]";
     }
+    else
+    {
+        cout << "[type: " << TokenKindIntToString[token.ty] << " val: " << token.valString << "]";
+    }
+    return cout;
+}
 
 class Lexer
 {
@@ -157,53 +156,53 @@ public:
 
     Lexer(string src)
     {
-        this -> i = 0;
-        this -> s = src;
+        this->i = 0;
+        this->s = src;
     }
 
     bool eof()
     {
-        return this -> i >= this -> s.size();
+        return this->i >= this->s.size();
     }
 
     void _skip_blank()
     {
-        while(!this -> eof() && this -> s[this -> i] == ' ')
+        while (!this->eof() && this->s[this->i] == ' ')
         {
-            this -> i++;
+            this->i++;
         }
     }
 
     Token next()
     {
         string val = "";
-        this -> _skip_blank();
+        this->_skip_blank();
 
-        if(this -> eof())
+        if (this->eof())
         {
             return Token(TokenKindStringToInt["Eof"], 0, "");
         }
 
-        else if(isDIGIT(this -> s[this -> i]))
+        else if (isDIGIT(this->s[this->i]))
         {
-            while(isDIGIT(this -> s[this -> i]))
+            while (isDIGIT(this->s[this->i]))
             {
-                val += this -> s[this -> i];
-                this -> i++;
+                val += this->s[this->i];
+                this->i++;
             }
             int num = stringToInt(val);
             return Token(TokenKindStringToInt["Num"], num, "");
         }
 
-        else if(isIDENT_FIRST(this -> s[this -> i]))
+        else if (isIDENT_FIRST(this->s[this->i]))
         {
-            while(isIDENT_REMAIN(this -> s[this -> i]))
+            while (isIDENT_REMAIN(this->s[this->i]))
             {
-                val += this -> s[this -> i];
-                this -> i++;
+                val += this->s[this->i];
+                this->i++;
             }
-            
-            if(find(begin(KEYWORD_SET), end(KEYWORD_SET), val) != end(KEYWORD_SET))
+
+            if (find(begin(KEYWORD_SET), end(KEYWORD_SET), val) != end(KEYWORD_SET))
             {
                 return Token(TokenKindStringToInt["KeyWord"], 0, val);
             }
@@ -213,34 +212,34 @@ public:
             }
         }
 
-        else if(isOP(this -> s[this -> i]))
+        else if (isOP(this->s[this->i]))
         {
-            char ch = this -> s[this -> i];
-            this -> i++;
+            char ch = this->s[this->i];
+            this->i++;
             return Token(TokenKindStringToInt["Op"], 0, string(1, ch));
         }
 
-        else if(this -> s[this -> i] == ':')
+        else if (this->s[this->i] == ':')
         {
-            this -> i++;
-            
-            if(this -> eof() || this -> s[this -> i] != '=')
+            this->i++;
+
+            if (this->eof() || this->s[this->i] != '=')
             {
                 throw "'=' expected";
             }
 
-            this -> i++;
+            this->i++;
             return Token(TokenKindStringToInt["Op"], 0, ":=");
         }
 
-        else if(this -> s[this -> i] == '>' || this -> s[this -> i] == '<')
+        else if (this->s[this->i] == '>' || this->s[this->i] == '<')
         {
-            char ch = this -> s[this -> i];
-            this -> i++;
+            char ch = this->s[this->i];
+            this->i++;
 
-            if(!this -> eof() & this -> s[this -> i] == '=')
+            if (!this->eof() && this->s[this->i] == '=')
             {
-                this -> i++;
+                this->i++;
                 string str = "";
                 str.push_back(ch);
                 str.push_back('=');
@@ -248,10 +247,11 @@ public:
             }
         }
 
-        else if(this -> s[this -> i] == '\n')
+        /*else if (this->s[this->i] == '\n')
         {
-            this -> i++;
-        }
+            this->i++;
+            return this->next();
+        }*/
 
         else
         {
@@ -259,26 +259,6 @@ public:
         }
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class Factor;
 class Term;
@@ -295,24 +275,39 @@ class Procedure;
 class Block;
 class Program;
 
+ostream& operator<<(ostream& cout, const Factor factor);
+ostream& operator<<(ostream& cout, const Term term);
+ostream& operator<<(ostream& cout, const Expression expression);
+ostream& operator<<(ostream& cout, const Assign assign);
+ostream& operator<<(ostream& cout, const Begin begin);
+ostream& operator<<(ostream& cout, const OddCondition odd_condition);
+ostream& operator<<(ostream& cout, const StdCondition std_condition);
+ostream& operator<<(ostream& cout, const Condition condition);
+ostream& operator<<(ostream& cout, const If _if);
+ostream& operator<<(ostream& cout, const While _while);
+ostream& operator<<(ostream& cout, const Statement statement);
+ostream& operator<<(ostream& cout, const Procedure procedure);
+ostream& operator<<(ostream& cout, const Block block);
+ostream& operator<<(ostream& cout, const Program program);
+
 class Factor
 {
 public:
     string valString;
     int valInt;
     Expression* valExpr;
-    Factor(){};
+    Factor() {};
     Factor(const Factor& factor)
     {
-        this -> valString = factor.valString;
-        this -> valInt = factor.valInt;
-        this -> valExpr = factor.valExpr;
+        this->valString = factor.valString;
+        this->valInt = factor.valInt;
+        this->valExpr = factor.valExpr;
     }
     Factor(string valString, int valInt, Expression* ValExpr)
     {
-        this -> valString = valString;
-        this -> valInt = valInt;
-        this -> valExpr = valExpr;
+        this->valString = valString;
+        this->valInt = valInt;
+        this->valExpr = valExpr;
 
         // this -> valExpr = new Expression;
         // this -> valExpr -> mod = valExpr->mod;
@@ -325,16 +320,16 @@ class Term
 public:
     Factor* lhs;
     vector<pair<string, Factor*>> rhs;
-    Term(){};
+    Term() {};
     Term(const Term& term)
     {
-        this -> lhs = term.lhs;
-        this -> rhs = term.rhs;
+        this->lhs = term.lhs;
+        this->rhs = term.rhs;
     }
     Term(Factor* lhs, vector<pair<string, Factor*>> rhs)
     {
-        this -> lhs = lhs;
-        this -> rhs = rhs;
+        this->lhs = lhs;
+        this->rhs = rhs;
     }
 };
 
@@ -344,18 +339,18 @@ public:
     string mod;
     Term* lhs;
     vector<pair<string, Term*>> rhs;
-    Expression(){};
+    Expression() {};
     Expression(const Expression& expr)
     {
-        this -> mod = expr.mod;
-        this -> lhs = expr.lhs;
-        this -> rhs = expr.rhs;
+        this->mod = expr.mod;
+        this->lhs = expr.lhs;
+        this->rhs = expr.rhs;
     }
     Expression(string mod, Term* lhs, vector<pair<string, Term*>> rhs)
     {
-        this -> mod = mod;
-        this -> lhs = lhs;
-        this -> rhs = rhs;
+        this->mod = mod;
+        this->lhs = lhs;
+        this->rhs = rhs;
     }
 };
 
@@ -368,13 +363,13 @@ public:
     Const();
     Const(const Const& _const)
     {
-        this -> name = _const.name;
-        this -> value = _const.value;
+        this->name = _const.name;
+        this->value = _const.value;
     }
     Const(string name, int value)
     {
-        this -> name = name;
-        this -> value = value;
+        this->name = name;
+        this->value = value;
     }
 };
 
@@ -384,16 +379,16 @@ public:
     string name;
     Expression* expr;
 
-    Assign(){};
+    Assign() {};
     Assign(const Assign& assign)
     {
-        this -> name = assign.name;
-        this -> expr = assign.expr;
+        this->name = assign.name;
+        this->expr = assign.expr;
     }
     Assign(string name, Expression* expr)
     {
-        this -> name = name;
-        this -> expr = expr;
+        this->name = name;
+        this->expr = expr;
     }
 };
 
@@ -401,14 +396,14 @@ class Call
 {
 public:
     string name;
-    Call(){};
+    Call() {};
     Call(const Call& call)
     {
-        this -> name = call.name;
+        this->name = call.name;
     }
     Call(string name)
     {
-        this -> name = name;
+        this->name = name;
     }
 };
 
@@ -417,14 +412,14 @@ class Begin
 public:
     vector<Statement*> body;
 
-    Begin(){};
+    Begin() {};
     Begin(const Begin& begin)
     {
-        this -> body = begin.body;
+        this->body = begin.body;
     }
     Begin(vector<Statement*> body)
     {
-        this -> body = body;
+        this->body = body;
     }
 };
 
@@ -432,14 +427,14 @@ class OddCondition
 {
 public:
     Expression* expr;
-    OddCondition(){};
+    OddCondition() {};
     OddCondition(const OddCondition& odd_cond)
     {
-        this -> expr = odd_cond.expr;
+        this->expr = odd_cond.expr;
     }
     OddCondition(Expression* expr)
     {
-        this -> expr = expr;
+        this->expr = expr;
     }
 };
 
@@ -449,18 +444,18 @@ public:
     string op;
     Expression* lhs;
     Expression* rhs;
-    StdCondition(){};
+    StdCondition() {};
     StdCondition(const StdCondition& std_cond)
     {
-        this -> op = std_cond.op;
-        this -> lhs = std_cond.lhs;
-        this -> rhs = std_cond.rhs;
+        this->op = std_cond.op;
+        this->lhs = std_cond.lhs;
+        this->rhs = std_cond.rhs;
     }
     StdCondition(string op, Expression* lhs, Expression* rhs)
     {
-        this -> op = op;
-        this -> lhs = lhs;
-        this -> rhs = rhs;
+        this->op = op;
+        this->lhs = lhs;
+        this->rhs = rhs;
     }
 };
 
@@ -469,16 +464,16 @@ class Condition
 public:
     OddCondition* oddCond;
     StdCondition* stdCond;
-    Condition(){};
+    Condition() {};
     Condition(const Condition& cond)
     {
-        this -> oddCond = cond.oddCond;
-        this -> stdCond = cond.stdCond;
+        this->oddCond = cond.oddCond;
+        this->stdCond = cond.stdCond;
     }
     Condition(OddCondition* odd_ptr, StdCondition* std_ptr)
     {
-        this -> oddCond = odd_ptr;
-        this -> stdCond = std_ptr;
+        this->oddCond = odd_ptr;
+        this->stdCond = std_ptr;
     }
 };
 
@@ -487,16 +482,16 @@ class If
 public:
     Condition* cond;
     Statement* then;
-    If(){};
+    If() {};
     If(const If& _if)
     {
-        this -> cond = _if.cond;
-        this -> then = _if.then;
+        this->cond = _if.cond;
+        this->then = _if.then;
     }
     If(Condition* cond, Statement* then)
     {
-        this -> cond = cond;
-        this -> then = then;
+        this->cond = cond;
+        this->then = then;
     }
 };
 
@@ -505,16 +500,16 @@ class While
 public:
     Condition* cond;
     Statement* then;
-    While(){};
+    While() {};
     While(const While& _while)
     {
-        this -> cond = _while.cond;
-        this -> then = _while.then;
+        this->cond = _while.cond;
+        this->then = _while.then;
     }
     While(Condition* cond, Statement* then)
     {
-        this -> cond = cond;
-        this -> then = then;
+        this->cond = cond;
+        this->then = then;
     }
 };
 
@@ -527,22 +522,22 @@ public:
     If* stmtI;
     While* stmtW;
 
-    Statement(){};
+    Statement() {};
     Statement(const Statement& state)
     {
-        this -> stmtA = state.stmtA;
-        this -> stmtB = state.stmtB;
-        this -> stmtC = state.stmtC;
-        this -> stmtI = state.stmtI;
-        this -> stmtW = state.stmtW;
+        this->stmtA = state.stmtA;
+        this->stmtB = state.stmtB;
+        this->stmtC = state.stmtC;
+        this->stmtI = state.stmtI;
+        this->stmtW = state.stmtW;
     }
     Statement(Assign* stmtA, Begin* stmtB, Call* stmtC, If* stmtI, While* stmtW)
     {
-        this -> stmtA = stmtA;
-        this -> stmtB = stmtB;
-        this -> stmtC = stmtC;
-        this -> stmtI = stmtI;
-        this -> stmtW = stmtW;
+        this->stmtA = stmtA;
+        this->stmtB = stmtB;
+        this->stmtC = stmtC;
+        this->stmtI = stmtI;
+        this->stmtW = stmtW;
     }
 };
 
@@ -552,16 +547,16 @@ public:
     string name;
     Block* body;
 
-    Procedure(){};
+    Procedure() {};
     Procedure(const Procedure& pro)
     {
-        this -> name = pro.name;
-        this -> body = pro.body;
+        this->name = pro.name;
+        this->body = pro.body;
     }
     Procedure(string name, Block* body)
     {
-        this -> name = name;
-        this -> body = body;
+        this->name = name;
+        this->body = body;
     }
 };
 
@@ -575,19 +570,19 @@ public:
 
     Block(vector<Const*> consts, vector<string> vars, vector<Procedure*> procs, Statement* stmt)
     {
-        this -> consts = consts;
-        this -> vars = vars;
-        this -> procs = procs;
-        this -> stmt = stmt;
+        this->consts = consts;
+        this->vars = vars;
+        this->procs = procs;
+        this->stmt = stmt;
     }
 
-    Block(){};
+    Block() {};
     Block(const Block& block)
     {
-        this -> consts = block.consts;
-        this -> vars = block.vars;
-        this -> procs = block.procs;
-        this -> stmt = block.stmt;
+        this->consts = block.consts;
+        this->vars = block.vars;
+        this->procs = block.procs;
+        this->stmt = block.stmt;
     }
 };
 
@@ -597,7 +592,7 @@ public:
     Block* block;
     Program(Block* block)
     {
-        this -> block = block;
+        this->block = block;
     }
 };
 
@@ -608,41 +603,41 @@ public:
 
     Parser(Lexer* lx)
     {
-        this -> lx = lx;
+        this->lx = lx;
     }
 
     bool check(int ty, string valString, int valInt)
     {
-        int p = this -> lx -> i;
-        Token tk = this -> lx -> next();
+        int p = this->lx->i;
+        Token tk = this->lx->next();
 
-        if(tk.ty == ty && tk.valInt == valInt && tk.valString == valString)
+        if (tk.ty == ty && tk.valInt == valInt && tk.valString == valString)
         {
             return true;
         }
 
-        this -> lx -> i = p;
+        this->lx->i = p;
         return false;
     }
 
     void expect(int ty, string valString, int valInt)
     {
-        Token tk = this -> lx -> next();
+        Token tk = this->lx->next();
         int tty = tk.ty;
         string tvalString = tk.valString;
         int tvalInt = tk.valInt;
 
-        if(tty != ty)
+        if (tty != ty)
         {
             throw ty + " expected, got " + tty;
         }
 
-        if(tty == TokenKindStringToInt["Num"] && valInt != tvalInt)
+        if (tty == TokenKindStringToInt["Num"] && valInt != tvalInt)
         {
             throw intToString(valInt) + " expected, got " + intToString(tvalInt);
         }
 
-        if(tty != TokenKindStringToInt["Num"] && valString != tvalString)
+        if (tty != TokenKindStringToInt["Num"] && valString != tvalString)
         {
             throw valString + " expected, got " + tvalString;
         }
@@ -664,8 +659,8 @@ public:
 
 Program Parser::program()
 {
-    Block block = this -> block();
-    this -> expect(TokenKindStringToInt["Op"], ".", 0);
+    Block block = this->block();
+    this->expect(TokenKindStringToInt["Op"], ".", 0);
     return Program(&block);
 }
 
@@ -675,43 +670,43 @@ Block Parser::block()
     vector<Procedure*> procs;
     vector<Const*> consts;
 
-    if(this -> check(TokenKindStringToInt["KeyWord"], "const", 0))
+    if (this->check(TokenKindStringToInt["KeyWord"], "const", 0))
     {
-        consts = this -> _const();
+        consts = this->_const();
     }
 
-    if(this -> check(TokenKindStringToInt["KeyWord"], "var", 0))
+    if (this->check(TokenKindStringToInt["KeyWord"], "var", 0))
     {
-        vars = this -> var();
+        vars = this->var();
     }
 
-    while (this -> check(TokenKindStringToInt["KeyWord"], "procedure", 0))
+    while (this->check(TokenKindStringToInt["KeyWord"], "procedure", 0))
     {
-        auto proc = this -> procedure();
+        auto proc = this->procedure();
         procs.push_back(&proc);
     }
-    
-    Statement stmt = this -> statement();
-    return Block(consts, vars, procs, &stmt); 
+
+    Statement stmt = this->statement();
+    return Block(consts, vars, procs, &stmt);
 }
 
 vector<Const*> Parser::_const()
 {
     vector<Const*> ans;
-    while(1)
+    while (1)
     {
-        Token name = this -> lx -> next();
+        Token name = this->lx->next();
         int ty = name.ty;
 
-        if(ty != TokenKindStringToInt["Name"])
+        if (ty != TokenKindStringToInt["Name"])
         {
             throw "name expected";
         }
 
-        this -> expect(TokenKindStringToInt["Op"], "=", 0);
-        Token num = this -> lx -> next();
+        this->expect(TokenKindStringToInt["Op"], "=", 0);
+        Token num = this->lx->next();
 
-        if(num.ty != TokenKindStringToInt["Num"])
+        if (num.ty != TokenKindStringToInt["Num"])
         {
             throw "number expected";
         }
@@ -721,13 +716,13 @@ vector<Const*> Parser::_const()
             ans.push_back(con);
         }
 
-        if(this -> check(TokenKindStringToInt["Op"], ";", 0))
+        if (this->check(TokenKindStringToInt["Op"], ";", 0))
         {
             return ans;
         }
         else
         {
-            this -> expect(TokenKindStringToInt["Op"], ",", 0);
+            this->expect(TokenKindStringToInt["Op"], ",", 0);
         }
     }
 }
@@ -737,10 +732,10 @@ vector<string> Parser::var()
     vector<string> ans;
     while (1)
     {
-        Token name = this -> lx -> next();
+        Token name = this->lx->next();
         int ty = name.ty;
 
-        if(ty != TokenKindStringToInt["Name"])
+        if (ty != TokenKindStringToInt["Name"])
         {
             throw "name expected";
         }
@@ -749,30 +744,30 @@ vector<string> Parser::var()
             ans.push_back(name.valString);
         }
 
-        if(this -> check(TokenKindStringToInt["Op"], ";", 0))
+        if (this->check(TokenKindStringToInt["Op"], ";", 0))
         {
             return ans;
         }
         else
         {
-            this -> expect(TokenKindStringToInt["Op"], ",", 0);
+            this->expect(TokenKindStringToInt["Op"], ",", 0);
         }
     }
 }
 
 Procedure Parser::procedure()
 {
-    Token name = this -> lx -> next();
+    Token name = this->lx->next();
     int ty = name.ty;
 
-    if(ty != TokenKindStringToInt["Name"])
+    if (ty != TokenKindStringToInt["Name"])
     {
         throw "name expected";
     }
-    this -> expect(TokenKindStringToInt["Op"], ";", 0);
+    this->expect(TokenKindStringToInt["Op"], ";", 0);
 
-    Block block = this -> block();
-    this -> expect(TokenKindStringToInt["Op"], ";", 0);
+    Block block = this->block();
+    this->expect(TokenKindStringToInt["Op"], ";", 0);
 
     return Procedure(name.valString, &block);
 }
@@ -784,10 +779,10 @@ Statement Parser::statement()
     Call* cal = new Call;
     If* _if = new If;
     While* whi = new While;
-    if(this -> check(TokenKindStringToInt["KeyWord"], "call", 0))
+    if (this->check(TokenKindStringToInt["KeyWord"], "call", 0))
     {
-        Token ident = this -> lx -> next();
-        if(ident.ty != TokenKindStringToInt["Name"])
+        Token ident = this->lx->next();
+        if (ident.ty != TokenKindStringToInt["Name"])
         {
             throw "name expected";
         }
@@ -798,133 +793,133 @@ Statement Parser::statement()
         }
     }
 
-    else if(this -> check(TokenKindStringToInt["KeyWord"], "begin", 0))
+    else if (this->check(TokenKindStringToInt["KeyWord"], "begin", 0))
     {
         vector<Statement*> body;
 
         while (1)
         {
-            Statement stmt = this -> statement();
+            Statement stmt = this->statement();
             body.push_back(&stmt);
 
-            if(this -> check(TokenKindStringToInt["KeyWord"], "end", 0))
+            if (this->check(TokenKindStringToInt["KeyWord"], "end", 0))
             {
                 break;
             }
             else
             {
-                this -> expect(TokenKindStringToInt["Op"], ";", 0);
+                this->expect(TokenKindStringToInt["Op"], ";", 0);
             }
         }
 
-        beg -> body = body; 
+        beg->body = body;
         return Statement(ass, beg, cal, _if, whi);
     }
 
-    else if(this -> check(TokenKindStringToInt["KeyWord"], "if", 0))
+    else if (this->check(TokenKindStringToInt["KeyWord"], "if", 0))
     {
-        Condition cond = this -> condition();
-        this -> expect(TokenKindStringToInt["KeyWord"], "then", 0);
-        _if -> cond = &cond;
-        auto stmt = this -> statement();
-        _if -> then = &stmt;
+        Condition cond = this->condition();
+        this->expect(TokenKindStringToInt["KeyWord"], "then", 0);
+        _if->cond = &cond;
+        auto stmt = this->statement();
+        _if->then = &stmt;
         return Statement(ass, beg, cal, _if, whi);
     }
 
-    else if(this -> check(TokenKindStringToInt["KeyWord"], "while", 0))
+    else if (this->check(TokenKindStringToInt["KeyWord"], "while", 0))
     {
-        Condition cond = this -> condition();
-        this -> expect(TokenKindStringToInt["KeyWord"], "then", 0);
-        whi -> cond = &cond;
-        auto stmt = this -> statement();
-        whi -> then = &stmt;
+        Condition cond = this->condition();
+        this->expect(TokenKindStringToInt["KeyWord"], "then", 0);
+        whi->cond = &cond;
+        auto stmt = this->statement();
+        whi->then = &stmt;
         return Statement(ass, beg, cal, _if, whi);
     }
 
     else
     {
-        Token tk = this -> lx -> next();
+        Token tk = this->lx->next();
         int ty = tk.ty;
 
-        if(ty != TokenKindStringToInt["Name"])
+        if (ty != TokenKindStringToInt["Name"])
         {
             throw "name expected";
         }
 
-        this -> expect(TokenKindStringToInt["Op"], ":=", 0);
-        ass -> name = tk.valString;
-        auto expr = this -> expression();
-        ass -> expr = &expr;
+        this->expect(TokenKindStringToInt["Op"], ":=", 0);
+        ass->name = tk.valString;
+        auto expr = this->expression();
+        ass->expr = &expr;
         return Statement(ass, beg, cal, _if, whi);
     }
 }
 
 Condition Parser::condition()
 {
-    if(this -> check(TokenKindStringToInt["KeyWord"], "odd", 0))
+    if (this->check(TokenKindStringToInt["KeyWord"], "odd", 0))
     {
-        auto odd = this -> odd_condition();
+        auto odd = this->odd_condition();
         return Condition(&odd, nullptr);
     }
     else
     {
-        auto std = this -> std_condition();
+        auto std = this->std_condition();
         return Condition(nullptr, &std);
     }
 }
 
 OddCondition Parser::odd_condition()
 {
-    auto expr = this -> expression();
+    auto expr = this->expression();
     return OddCondition(&expr);
 }
 
 StdCondition Parser::std_condition()
 {
-    Expression lhs = this -> expression();
-    Token cmp = this -> lx -> next();
+    Expression lhs = this->expression();
+    Token cmp = this->lx->next();
 
-    if(cmp.ty != TokenKindStringToInt["Op"])
+    if (cmp.ty != TokenKindStringToInt["Op"])
     {
         throw "operator expected";
     }
 
-    vector<string> op_list = {"=", "#", "<", ">", "<=", ">="};
-    if(find(op_list.begin(), op_list.end(), cmp.valString) == op_list.end())
+    vector<string> op_list = { "=", "#", "<", ">", "<=", ">=" };
+    if (find(op_list.begin(), op_list.end(), cmp.valString) == op_list.end())
     {
         throw "condition operator expected";
     }
 
-    Expression rhs = this -> expression();
+    Expression rhs = this->expression();
     return StdCondition(cmp.valString, &lhs, &rhs);
 }
 
 Expression Parser::expression()
 {
     string mod = "";
-    if(this -> check(TokenKindStringToInt["Op"], "+", 0))
+    if (this->check(TokenKindStringToInt["Op"], "+", 0))
     {
         mod = "+";
     }
-    else if(this -> check(TokenKindStringToInt["Op"], "-", 0))
+    else if (this->check(TokenKindStringToInt["Op"], "-", 0))
     {
         mod = "-";
     }
 
     vector<pair<string, Term*>> rhs;
-    Term lhs = this -> term();
+    Term lhs = this->term();
 
-    while(1)
+    while (1)
     {
-        if(this -> check(TokenKindStringToInt["Op"], "+", 0))
+        if (this->check(TokenKindStringToInt["Op"], "+", 0))
         {
-            auto term = this -> term();
-            rhs.push_back(pair<string, Term*>{"+", &term});
+            auto term = this->term();
+            rhs.push_back(pair<string, Term*>{"+", & term});
         }
-        else if(this -> check(TokenKindStringToInt["Op"], "-", 0))
+        else if (this->check(TokenKindStringToInt["Op"], "-", 0))
         {
-            auto term = this -> term();
-            rhs.push_back(pair<string, Term*>{"-", &term});
+            auto term = this->term();
+            rhs.push_back(pair<string, Term*>{"-", & term});
         }
         else
         {
@@ -937,19 +932,19 @@ Expression Parser::expression()
 Term Parser::term()
 {
     vector<pair<string, Factor*>> rhs;
-    Factor lhs = this -> factor();
+    Factor lhs = this->factor();
 
-    while(1)
+    while (1)
     {
-        if(this -> check(TokenKindStringToInt["Op"], "*", 0))
+        if (this->check(TokenKindStringToInt["Op"], "*", 0))
         {
-            auto factor = this -> factor();
-            rhs.push_back(pair<string, Factor*>{"*", &factor});
+            auto factor = this->factor();
+            rhs.push_back(pair<string, Factor*>{"*", & factor});
         }
-        else if(this -> check(TokenKindStringToInt["Op"], "/", 0))
+        else if (this->check(TokenKindStringToInt["Op"], "/", 0))
         {
-            auto factor = this -> factor();
-            rhs.push_back(pair<string, Factor*>{"/", &factor});
+            auto factor = this->factor();
+            rhs.push_back(pair<string, Factor*>{"/", & factor});
         }
         else
         {
@@ -961,37 +956,161 @@ Term Parser::term()
 
 Factor Parser::factor()
 {
-    Token tk = this -> lx -> next();
+    Token tk = this->lx->next();
     int ty = tk.ty;
     int valInt = tk.valInt;
     string valString = tk.valString;
 
-    if(ty == TokenKindStringToInt["Num"])
+    if (ty == TokenKindStringToInt["Num"])
     {
         auto expr = new Expression;
         return Factor("", valInt, expr);
     }
-    if(ty == TokenKindStringToInt["Name"])
+    if (ty == TokenKindStringToInt["Name"])
     {
         auto expr = new Expression;
         return Factor(valString, 0, expr);
     }
 
-    if(ty != TokenKindStringToInt["Op"] || valString != "(")
+    if (ty != TokenKindStringToInt["Op"] || valString != "(")
     {
         throw "'(' expected";
     }
 
-    Expression expr = this -> expression();
-    this -> expect(TokenKindStringToInt["Op"], ")", 0);
+    Expression expr = this->expression();
+    this->expect(TokenKindStringToInt["Op"], ")", 0);
     return Factor("", 0, &expr);
+}
+
+ostream& operator<<(ostream& cout, const Expression expression)
+{
+    cout << "[Expression | mod: " << expression.mod << " lhs: " << *expression.lhs << " rhs: ";
+    for (auto item : expression.rhs)
+    {
+        cout << "<" << item.first << "," << *item.second << ">";
+    }
+    cout << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Const _const)
+{
+    cout << "[Const | name: " << _const.name << " value: " << _const.value << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Assign assign)
+{
+    cout << "Assign | name: " << assign.name << "expr: " << *assign.expr << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Call call)
+{
+    cout << "[Call | name: " << call.name << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Begin begin)
+{
+    cout << "[Begin | body: " << begin.body << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const OddCondition odd_condition)
+{
+    cout << "[OddCondition | expr: " << *odd_condition.expr << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const StdCondition std_condition)
+{
+    cout << "[StdCondition | op: " << std_condition.op << " lhs: " << *std_condition.lhs << " rhs: " << *std_condition.rhs << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Factor factor)
+{
+    cout << "[Factor | valString: " << factor.valString << " valInt: " << factor.valInt << " valExpr: " << *factor.valExpr << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Term term)
+{
+    cout << "[Term | lhs: " << *term.lhs << " rhs: ";
+    for (auto item : term.rhs)
+    {
+        cout << "<" << item.first << "," << *item.second << ">";
+    }
+    cout << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Condition condition)
+{
+    cout << "[Condition | OddCondition: " << *condition.oddCond << " StdCondition: " << *condition.stdCond << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const If _if)
+{
+    cout << "[If | Condition: " << *_if.cond << " Statement: " << *_if.then << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const While _while)
+{
+    cout << "[while | Condition: " << *_while.cond << " Statement: " << *_while.then << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Statement statement)
+{
+    cout << "[Statement | Assign: " << *statement.stmtA << " Begin: " << *statement.stmtB << " Call: " << *statement.stmtC << " If: " << *statement.stmtI << " While: " << *statement.stmtW << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Procedure procedure)
+{
+    cout << "Procedure | name : " << procedure.name << " body: " << *procedure.body << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Program program)
+{
+    cout << "[Program | block: " << program.block << "]";
+    return cout;
+}
+
+ostream& operator<<(ostream& cout, const Block block)
+{
+    cout << "Block| consts: ";
+    for (auto const_ptr : block.consts)
+    {
+        cout << *const_ptr;
+    }
+
+    cout << "vars: ";
+    for (auto var_string : block.vars)
+    {
+        cout << var_string << ",";
+    }
+
+    cout << "procs: ";
+    for (auto proc_ptr : block.procs)
+    {
+        cout << *proc_ptr;
+    }
+
+    cout << "statement: " << *block.stmt << "]";
+    return cout;
 }
 
 
 int main()
 {
     cout << TEST_PROGRAM << endl;
-    
+
     // Lexer lx(TEST_PROGRAM);
     // Token tk = lx.next();
     // while (tk.ty != TokenKindStringToInt["Eof"])
@@ -1002,7 +1121,7 @@ int main()
 
     Lexer* lx = new Lexer(TEST_PROGRAM);
     Parser ps = Parser(lx);
-    // cout << ps.program();
+    cout << ps.program();
 
     return 0;
 }
