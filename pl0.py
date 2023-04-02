@@ -506,7 +506,7 @@ class Procedure(NamedTuple):
 
     def eval(self, ctx: EvalContext) -> int | None:
         # TODO: implement proc evaluation
-        ctx.procs[self.name] = Procedure(self.name, self.body)
+        self.body.eval(ctx)
         
         
 
