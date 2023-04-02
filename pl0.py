@@ -328,6 +328,8 @@ class Assign(NamedTuple):
         assert val is not None, 'invalid assignment expression'
 
         ctx.vars[self.name] = val
+
+        print(val)
         return None
 
 class Call(NamedTuple):
